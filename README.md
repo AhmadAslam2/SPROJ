@@ -1,2 +1,2 @@
 # SPROJ
-Industrial Senior Year Project: Blood Donating System
+Industrial Senior Year Project: Blood Donating System.
