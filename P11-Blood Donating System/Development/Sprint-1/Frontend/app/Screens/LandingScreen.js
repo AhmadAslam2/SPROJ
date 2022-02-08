@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Icon } from 'react-native-elements';
 import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 
@@ -9,6 +9,9 @@ import RequestCard from '../Components/RequestCard'
 
 export default function LandingScreen({ navigation }) {
     const [loading, setLoading] = useState(false)
+    useEffect(() => {
+
+    })
     return (
 
         <SafeAreaView style={styles.container}>

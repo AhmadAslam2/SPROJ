@@ -1,8 +1,22 @@
-import React from 'react'
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { Formik } from 'formik'
+import React, { useState } from 'react'
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { Icon, Input } from 'react-native-elements'
 import colors from '../config/colors'
+import * as Yup from 'yup';
+import { signin } from '../apis/auth'
+import { saveInStorage } from '../utils'
+
+const SignInSchema = Yup.object().shape({
+    password: Yup.string()
+        .min(6, 'Too Short!')
+        .max(20, 'Too Long!')
+        .required('Required'),
+    email: Yup.string().email('Invalid email').required('Required'),
+});
+
 export default function SigninScreen({ navigation }) {
+    const [loading, setLoading] = useState(false)
     return (
         <View style={styles.Container}>
             <View style={styles.content}>
@@ -33,45 +47,78 @@ export default function SigninScreen({ navigation }) {
                     <Icon name="logo-google" type="ionicon" color='#506EDA' />
                     <Text style={{ color: "#4285F4", marginLeft: 13 }}>Sign in with Google</Text>
                 </TouchableOpacity>
-                <View>
-                    <Text style={{ fontSize: 16, fontWeight: "400", paddingBottom: 15 }}>
-                        Enter your Username or email address
-                    </Text>
-                    <Input
-                        placeholder="Username or Email"
-                        textContentType="emailAddress"
-                        style={styles.input}
-                        inputContainerStyle={{ borderBottomWidth: 0 }}
-                        containerStyle={{ paddingHorizontal: 0 }}
-                    >
-                    </Input>
-                </View>
-                <View style={{ padding: 0 }}>
-                    <Text style={{ fontSize: 16, fontWeight: "400", paddingBottom: 15 }}>
-                        Enter your Password
-                    </Text>
-                    <Input
-                        placeholder="Password"
-                        secureTextEntry={true}
-                        textContentType="password"
-                        style={styles.input}
-                        inputContainerStyle={{ borderBottomWidth: 0, }}
-                        containerStyle={{ paddingHorizontal: 0, margin: 0 }}
-                    >
-                    </Input>
-                    <TouchableOpacity style={{ alignSelf: "flex-end" }}>
-                        <Text style={{ fontSize: 11, color: "#4285F4" }}>
-                            Forgot Password
-                        </Text>
-                    </TouchableOpacity>
-                </View>
-                <TouchableOpacity style={styles.button}
-                    onPress={() => navigation.navigate('LandingScreen')}
+
+                <Formik
+                    initialValues={{
+                        email: "",
+                        password: ""
+                    }}
+                    validationSchema={SignInSchema}
+                    onSubmit={async (values) => {
+                        try {
+                            setLoading(true)
+                            const res = await signin(values);
+                            console.log("Res", res)
+                            await saveInStorage("token", res?.data?.token)
+                            setLoading(false)
+                            navigation.navigate('LandingScreen')
+                        } catch (error) { console.log("error", error) }
+                    }}
                 >
-                    <Text style={styles.buttonText}>
-                        Sign in
-                    </Text>
-                </TouchableOpacity>
+                    {({ handleChange, handleBlur, handleSubmit, values, errors }) => (
+                        <>
+                            <View>
+                                <Text style={{ fontSize: 16, fontWeight: "400", paddingBottom: 15 }}>
+                                    Enter your Username or email address
+                                </Text>
+                                <Input
+                                    placeholder="Username or Email"
+                                    textContentType="emailAddress"
+                                    style={styles.input}
+                                    onChangeText={handleChange('email')}
+                                    onBlur={handleBlur('email')}
+                                    value={values?.email}
+                                    inputContainerStyle={{ borderBottomWidth: 0 }}
+                                    containerStyle={{ paddingHorizontal: 0 }}
+                                >
+                                </Input>
+                            </View>
+                            <Text>{errors.email}</Text>
+                            <View style={{ padding: 0 }}>
+                                <Text style={{ fontSize: 16, fontWeight: "400", paddingBottom: 15 }}>
+                                    Enter your Password
+                                </Text>
+                                <Input
+                                    placeholder="Password"
+                                    secureTextEntry={true}
+                                    textContentType="password"
+                                    style={styles.input}
+                                    onChangeText={handleChange('password')}
+                                    onBlur={handleBlur('password')}
+                                    value={values?.password}
+                                    inputContainerStyle={{ borderBottomWidth: 0, }}
+                                    containerStyle={{ paddingHorizontal: 0, margin: 0 }}
+                                >
+                                </Input>
+                                <TouchableOpacity style={{ alignSelf: "flex-end" }}>
+                                    <Text style={{ fontSize: 11, color: "#4285F4" }}>
+                                        Forgot Password
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+                            <Text>{errors.password}</Text>
+                            <TouchableOpacity style={styles.button}
+                                onPress={
+                                    handleSubmit
+                                }
+                            >
+                                <Text style={styles.buttonText}>
+                                    Sign in
+                                </Text>
+                            </TouchableOpacity>
+                        </>
+                    )}</Formik>
+
             </View>
         </View>
     )

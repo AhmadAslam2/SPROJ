@@ -1,8 +1,24 @@
-import React from 'react'
+import { Formik } from 'formik'
+import React, { useState } from 'react'
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { Icon, Input } from 'react-native-elements'
 import colors from '../config/colors'
+import * as Yup from 'yup';
+import { signup } from '../apis/auth'
+import { saveInStorage } from '../utils'
+
+
+const SignUpSchema = Yup.object().shape({
+    password: Yup.string()
+        .min(6, 'Too Short!')
+        .max(20, 'Too Long!')
+        .required('Required'),
+    verifyPassword: Yup.string()
+        .oneOf([Yup.ref('password'), null], 'Passwords must match'),
+    email: Yup.string().email('Invalid email').required('Required'),
+});
 export default function SignupScreen({ navigation }) {
+    const [loading, setLoading] = useState(false)
     return (
         <View style={styles.Container}>
             <View style={styles.content}>
@@ -27,82 +43,167 @@ export default function SignupScreen({ navigation }) {
                         Sing up
                     </Text>
                 </View>
-                <View>
-                    <Text style={{ fontSize: 16, fontWeight: "400", paddingBottom: 15 }}>
-                        Enter your Username or email address
-                    </Text>
-                    <Input
-                        placeholder="Username or Email"
-                        textContentType="emailAddress"
-                        style={styles.input}
-                        inputContainerStyle={{ borderBottomWidth: 0 }}
-                        containerStyle={{ paddingHorizontal: 0 }}
-                    >
-                    </Input>
-                </View>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                    <View style={{ flex: 1 }}>
-                        <Text style={{ fontSize: 16, fontWeight: "400", paddingBottom: 15 }}>
-                            Blood Group
-                        </Text>
-                        <Input
-                            placeholder="Blood Group"
-                            textContentType="username"
-                            style={styles.input}
-                            inputContainerStyle={{ borderBottomWidth: 0, }}
-                            containerStyle={{ paddingLeft: 0 }}
-                        >
-                        </Input>
-                    </View>
-                    <View style={{ flex: 1 }}>
-                        <Text style={{ fontSize: 16, fontWeight: "400", paddingBottom: 15 }}>
-                            Contact Number
-                        </Text>
-                        <Input
-                            placeholder="Contact "
-                            textContentType="telephoneNumber"
-                            style={styles.input}
-                            inputContainerStyle={{ borderBottomWidth: 0 }}
-                            containerStyle={{ paddingHorizontal: 0 }}
-                        >
-                        </Input>
-                    </View>
-                </View>
-                <View style={{ padding: 0 }}>
-                    <Text style={{ fontSize: 16, fontWeight: "400", paddingBottom: 15 }}>
-                        Enter your Password
-                    </Text>
-                    <Input
-                        placeholder="Password"
-                        secureTextEntry={true}
-                        textContentType="password"
-                        style={styles.input}
-                        inputContainerStyle={{ borderBottomWidth: 0 }}
-                        containerStyle={{ paddingHorizontal: 0 }}
-                    >
-                    </Input>
-                </View>
-                <View style={{ padding: 0 }}>
-                    <Text style={{ fontSize: 16, fontWeight: "400", paddingBottom: 15 }}>
-                        Verify your Password
-                    </Text>
-                    <Input
-                        placeholder="Password"
-                        secureTextEntry={true}
-                        textContentType="password"
-                        style={styles.input}
-                        inputContainerStyle={{ borderBottomWidth: 0 }}
-                        containerStyle={{ paddingHorizontal: 0 }}
-                    >
-                    </Input>
-                </View>
-                <TouchableOpacity style={styles.button}
-                    onPress={() => navigation.navigate('LandingScreen')}
+                <Formik
+                    initialValues={{
+                        email: "",
+                        password: "",
+                        firstName: "",
+                        lastName: "",
+                        verifyPassword: "",
+                        contactNumber: "",
+                        bloodGroup: ""
+                    }}
+                    validationSchema={SignUpSchema}
+                    onSubmit={async (values) => {
+                        try {
+                            setLoading(true)
+                            const { verifyPassword, ...payload } = values;
+                            console.log("values", payload)
+                            const res = await signup(payload);
+                            console.log("REs", res)
+                            await saveInStorage("token", res?.data?.token)
+                            setLoading(false)
+                            navigation.navigate('LandingScreen')
+
+                        } catch (error) { console.log("error", error) }
+                    }}
                 >
-                    <Text style={styles.buttonText}>
-                        Sign in
-                    </Text>
-                </TouchableOpacity>
+                    {({ handleChange, handleBlur, handleSubmit, values, errors }) => (
+                        <>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={{ fontSize: 16, fontWeight: "400", paddingBottom: 15 }}>
+                                        First Name
+                                    </Text>
+                                    <Input
+                                        placeholder="First Name"
+                                        style={styles.input}
+                                        onChangeText={handleChange('firstName')}
+                                        onBlur={handleBlur('firstName')}
+                                        value={values?.firstName}
+                                        inputContainerStyle={{ borderBottomWidth: 0, }}
+                                        containerStyle={{ paddingLeft: 0 }}
+                                    >
+                                    </Input>
+                                    <Text>{errors.firstName}</Text>
+                                </View>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={{ fontSize: 16, fontWeight: "400", paddingBottom: 15 }}>
+                                        Last Name
+                                    </Text>
+                                    <Input
+                                        placeholder="Last Name"
+                                        style={styles.input}
+                                        onChangeText={handleChange('lastName')}
+                                        onBlur={handleBlur('lastName')}
+                                        value={values?.lastName}
+                                        inputContainerStyle={{ borderBottomWidth: 0 }}
+                                        containerStyle={{ paddingHorizontal: 0 }}
+                                    >
+                                    </Input>
+                                    <Text>{errors.lastName}</Text>
+                                </View>
+                            </View>
+                            <View>
+                                <Text style={{ fontSize: 16, fontWeight: "400", paddingBottom: 15 }}>
+                                    Enter your Username or email address
+                                </Text>
+                                <Input
+                                    placeholder="Username or Email"
+                                    textContentType="emailAddress"
+                                    style={styles.input}
+                                    onChangeText={handleChange('email')}
+                                    onBlur={handleBlur('email')}
+                                    value={values?.email}
+                                    inputContainerStyle={{ borderBottomWidth: 0 }}
+                                    containerStyle={{ paddingHorizontal: 0 }}
+                                >
+                                </Input>
+                                <Text>{errors.email}</Text>
+                            </View>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={{ fontSize: 16, fontWeight: "400", paddingBottom: 15 }}>
+                                        Blood Group
+                                    </Text>
+                                    <Input
+                                        placeholder="Blood Group"
+                                        style={styles.input}
+                                        onChangeText={handleChange('bloodGroup')}
+                                        onBlur={handleBlur('bloodGroup')}
+                                        value={values?.bloodGroup}
+                                        inputContainerStyle={{ borderBottomWidth: 0, }}
+                                        containerStyle={{ paddingLeft: 0 }}
+                                    >
+                                    </Input>
+                                    <Text>{errors.bloodGroup}</Text>
+
+                                </View>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={{ fontSize: 16, fontWeight: "400", paddingBottom: 15 }}>
+                                        Contact Number
+                                    </Text>
+                                    <Input
+                                        placeholder="Contact"
+                                        textContentType="telephoneNumber"
+                                        style={styles.input}
+                                        onChangeText={handleChange('contactNumber')}
+                                        onBlur={handleBlur('contactNumber')}
+                                        value={values?.contactNumber}
+                                        inputContainerStyle={{ borderBottomWidth: 0 }}
+                                        containerStyle={{ paddingHorizontal: 0 }}
+                                    >
+                                    </Input>
+                                    <Text>{errors.contactNumber}</Text>
+
+                                </View>
+                            </View>
+                            <View style={{ padding: 0 }}>
+                                <Text style={{ fontSize: 16, fontWeight: "400", paddingBottom: 15 }}>
+                                    Enter your Password
+                                </Text>
+                                <Input
+                                    placeholder="Password"
+                                    secureTextEntry={true}
+                                    textContentType="password"
+                                    style={styles.input}
+                                    onChangeText={handleChange('password')}
+                                    onBlur={handleBlur('password')}
+                                    value={values?.password}
+                                    inputContainerStyle={{ borderBottomWidth: 0 }}
+                                    containerStyle={{ paddingHorizontal: 0 }}
+                                >
+                                </Input>
+                                <Text>{errors.password}</Text>
+                            </View>
+                            <View style={{ padding: 0 }}>
+                                <Text style={{ fontSize: 16, fontWeight: "400", paddingBottom: 15 }}>
+                                    Verify your Password
+                                </Text>
+                                <Input
+                                    placeholder="Password"
+                                    secureTextEntry={true}
+                                    textContentType="password"
+                                    style={styles.input}
+                                    onChangeText={handleChange('verifyPassword')}
+                                    onBlur={handleBlur('verifyPassword')}
+                                    value={values?.verifyPassword}
+                                    inputContainerStyle={{ borderBottomWidth: 0 }}
+                                    containerStyle={{ paddingHorizontal: 0 }}
+                                >
+                                </Input>
+                                <Text>{errors.verifyPassword}</Text>
+
+                            </View>
+                            <TouchableOpacity style={styles.button}
+                                onPress={handleSubmit}
+                            >
+                                <Text style={styles.buttonText}>
+                                    Sign up
+                                </Text>
+                            </TouchableOpacity>
+                        </>
+                    )}</Formik>
             </View>
         </View>
     )

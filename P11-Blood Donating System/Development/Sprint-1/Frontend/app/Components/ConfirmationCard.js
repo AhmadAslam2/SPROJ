@@ -1,5 +1,5 @@
 import React from 'react'
-import { StyleSheet, Text, View, TouchableOpacity, Alert } from 'react-native'
+import { StyleSheet, Text, View, TouchableOpacity, } from 'react-native'
 import { Icon, Input } from 'react-native-elements';
 import { Formik } from 'formik'
 import colors from '../config/colors'
@@ -29,20 +29,21 @@ export default function ConfirmationCard({ navigation, requestData }) {
             >
                 {({ handleChange, handleBlur, handleSubmit, values }) => (
                     <>
-                        <View style={{ flexDirection: 'row', width: "100%", justifyContent: "space-evenly" }}>
-                            <View >
+                        <View style={{ flexDirection: 'row', width: "100%", justifyContent: "center" }}>
+                            <View style={{ alignSelf: 'center' }}>
                                 <Input
                                     placeholder="Date"
                                     leftIcon={{ type: 'ionicon', name: 'calendar-outline', color: 'white', size: 15 }}
                                     placeholderTextColor="white"
                                     containerStyle={styles.input}
+                                    inputContainerStyle={{ borderBottomWidth: 0 }}
                                     inputStyle={{ color: 'white' }}
                                     onChangeText={handleChange('date')}
                                     onBlur={handleBlur('date')}
                                     value={values.date}
                                 />
                             </View>
-                            <View>
+                            {/* <View>
                                 <Input
                                     placeholder="Amount"
                                     placeholderTextColor="white"
@@ -53,7 +54,7 @@ export default function ConfirmationCard({ navigation, requestData }) {
                                     onBlur={handleBlur('amount')}
                                     value={values.amount}
                                 />
-                            </View>
+                            </View> */}
                         </View>
                         <View style={{ borderColor: "white", borderWidth: 1, width: '100%' }} />
                         <View style={styles.locationContainer}>
@@ -104,7 +105,10 @@ const styles = StyleSheet.create({
         height: 40,
         borderRadius: 15,
         backgroundColor: '#4864C5',
-        width: 100
+        width: 100,
+        paddingHorizontal: 15,
+        paddingVertical: 0,
+        margin: 0
     },
     location: {
         fontSize: 18,
