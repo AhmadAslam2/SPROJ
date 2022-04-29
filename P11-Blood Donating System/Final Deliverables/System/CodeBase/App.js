@@ -1,56 +1,61 @@
-import React, { useState } from 'react';
-import { StyleSheet, Platform, StatusBar } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { RootSiblingParent } from 'react-native-root-siblings';
-import MessageScreen from './app/Screens/MessageScreen';
-import LandingScreen from './app/Screens/LandingScreen';
-import NgoListScreen from './app/Screens/NgoListScreen';
-import ConfirmationScreen from './app/Screens/ConfirmationScreen';
-import RequestDiscriptionScreen from './app/Screens/RequestDiscriptionScreen';
-import ProfileScreen from './app/Screens/ProfileScreen';
-import SigninScreen from './app/Screens/SigninScreen';
-import SignupScreen from './app/Screens/SignupScreen';
-import MenuBar from './app/Components/MenuBar';
-import ChatScreen from './app/Screens/ChatScreen';
+require("dotenv").config();
+const createError = require("http-errors");
+const express = require("express");
+const path = require("path");
+const cookieParser = require("cookie-parser");
+const logger = require("morgan");
+const mongoose = require("mongoose");
+const cors = require("cors");
+const apiRoutes = require("./routes/api");
 
-const Stack = createNativeStackNavigator();
-const hideMenuBarOn = ["RequestDescriptionScreen", "SignupScreen", "SigninScreen", "MessageScreen", "ChatScreen"]
+const app = express();
+app.use("/static", express.static(path.join(__dirname, "public/data/uploads")));
+app.use(express.static(path.join(__dirname, "public/data/uploads")));
 
-export default function App() {
-  const [activeScreen, setActiveScreen] = useState()
-  const displayMenuBar = hideMenuBarOn.indexOf(activeScreen) === -1
-
-
-  return (
-    <RootSiblingParent>
-      <NavigationContainer>
-        <Stack.Navigator screenListeners={{
-          state: (e) => {
-            // Do something with the state
-            const index = e.data.state.index
-            const screenName = e.data.state.routes[index].name
-            setActiveScreen(screenName)
-          },
-        }}>
-          <Stack.Screen name="SigninScreen" component={SigninScreen} options={{ headerShown: false, title: "" }} />
-          <Stack.Screen name="SignupScreen" component={SignupScreen} options={{ headerShown: false, title: "" }} />
-          <Stack.Screen name="LandingScreen" component={LandingScreen} options={{ headerShown: false, title: "" }} />
-          <Stack.Screen name="NgoListScreen" component={NgoListScreen} options={{ headerShown: false, title: "" }} />
-          <Stack.Screen name="ConfirmationScreen" component={ConfirmationScreen} options={{ headerShown: false, title: "" }} />
-          <Stack.Screen name="RequestDescriptionScreen" component={RequestDiscriptionScreen} options={{ headerShown: false, title: "" }} />
-          <Stack.Screen name="ProfileScreen" component={ProfileScreen} options={{ headerShown: false, title: "" }} />
-          <Stack.Screen name="MessageScreen" component={MessageScreen} options={{ headerShown: true, title: "Recent Chats" }} />
-          <Stack.Screen name="ChatScreen" component={ChatScreen} options={{ headerShown: true, title: "" }} />
-        </Stack.Navigator>
-        {displayMenuBar && <MenuBar />}
-      </NavigationContainer>
-    </RootSiblingParent>
-  );
-}
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0
-  },
+const connection = mongoose.connect(process.env.DB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
 });
+// const connection = mongoose.connect("mongodb://localhost:27017/bds", {
+//   useNewUrlParser: true,
+//   useUnifiedTopology: true,
+// });
+const db = mongoose.connection;
+db.on("error", console.error.bind(console, "connection error:"));
+db.once("open", function () {
+  console.log("db is connected!");
+});
+
+app.use(cors());
+app.use(logger("dev"));
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser());
+
+app.use("/api", apiRoutes);
+
+app.get("*", (request, response) => {
+  if (request.path === "/") {
+    response.sendFile(path.join(__dirname, `/frontend/build/index.html`));
+  } else if (!request.path.includes("api")) {
+    response.sendFile(path.join(__dirname, `/frontend/build/index.html`));
+  }
+});
+
+// catch 404 and forward to error handler
+app.use(function (req, res, next) {
+  next(createError(404));
+});
+
+// error handler
+app.use(function (err, req, res, next) {
+  // set locals, only providing error in development
+  res.locals.message = err.message;
+  res.locals.error = req.app.get("env") === "development" ? err : {};
+
+  // render the error page
+  res.status(err.status || 500);
+  res.send(err);
+});
+
+module.exports = app;
